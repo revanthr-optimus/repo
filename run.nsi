@@ -333,8 +333,11 @@ Section Run
   
   ; Start servtray
   ; To do :- Commented because having use in major and minor upgrade
-  ; ExecWait '"$temp\EnvWrap.bat" "$INSTDIR\program\servtray.exe"' $R0
-  ; Filename: "{%SQBAKDIR}\install\upgrade.bat"; WorkingDir: "{%SQBAKDIR}\install"; Flags: runhidden skipifdoesntexist; StatusMsg: "Restoring Optional Products"
+   ;ExecWait '"$temp\EnvWrap.bat" "$INSTDIR\program\servtray.exe REPAIR"' $R0
+   ;DetailPrint "Installing servtray.exe $R0"
+   ;ExecWait '"${SQBAKDIR}\install\upgrade.bat"' $R0
+   ;DetailPrint "Restoring Optional Products $R0"
+   ;Filename: "{%SQBAKDIR}\install\upgrade.bat"; WorkingDir: "{%SQBAKDIR}\install"; Flags: runhidden skipifdoesntexist; StatusMsg: "Restoring Optional Products"
 
   ; udterminfo UPGRADES
   ; To do :- Commented because having use in major and minor upgrade
@@ -353,6 +356,11 @@ Section Run
   ; ExecWait '"$temp\hsKeep.bat"' $R0
   ; ExecWait '"$INSTDIR\Program\LogoffFastUserService.exe" "start"' $R0
 
+  
+  ;ExecWait '"$SysDir\cmd.exe" /c net stop "Squirrel Host Service"'
+  ;DetailPrint "Stopping Squirrel Host Service"
+  
+  
   DetailPrint "Finsihed installing required services."
   Sleep 4000
   SendMessage $hCtl_PostInstallation_FormControl_ProgressBar1 ${PBM_SETPOS} 100 0
@@ -360,11 +368,19 @@ Section Run
   ; For creating Desktop and start menu Back office shorcut
   Call CreateSquirrelIcon
 
+  ; Put database in shutdown mode.
+  DetailPrint "Put database into shutdown mode"
+  Sleep 4000
+  ExecWait '${osql} ${osqlOpts} -d $database_Name -Q UPDATE c_flagdata SET data=1 where FlagNameID =10018'
+  
   ; Cleaning up ini files used during installation
   DetailPrint "Cleaning up of ini files used during installation"
   Sleep 4000
   Call CleanUp
 
+  ExecWait 'net.exe stop MSSQLSERVER /yes' $R0
+  nsislog::log "$temp\logfile.txt" "Setting SYSADMIN Server Role for NT AUTHORITY\SYSTEM Result Code :- $R0"
+  
   ;Enable next button
   GetDlgItem $R3 $HWNDPARENT 1
   EnableWindow $R3 1
