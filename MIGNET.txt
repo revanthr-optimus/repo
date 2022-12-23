@@ -1,5 +1,1 @@
-<<<<<<< HEAD
 new data
-=======
-new data
->>>>>>> main
